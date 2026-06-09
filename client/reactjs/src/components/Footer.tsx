@@ -52,7 +52,7 @@ export default function Footer() {
                         <YoutubeIcon className="size-6 hover:text-pink-500" />
                     </a>
                 </div>
-                <p className="mt-3 text-center">&copy; {new Date().getFullYear()} <a href="https://prebuiltui.com?utm_source=pixels">Thumblify - Samal              </a></p>
+                <p className="mt-3 text-center">&copy; {new Date().getFullYear()} <a href="https://www.linkedin.com/in/samal-kumar-choudhary-0139582a9/">Thumblify - Samal              </a></p>
             </motion.div>
         </footer>
     );

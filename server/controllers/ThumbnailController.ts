@@ -174,33 +174,31 @@
 
 import { Request, Response } from "express";
 import Thumbnail from "../models/Thumbnail.js";
-import Replicate from "replicate";
-
-// ---------------- REPLICATE INIT ----------------
-
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN!,
-});
 
 // ---------------- STYLE MAPS ----------------
 
 const stylePrompts = {
-  'Bold & Graphic': 'eye-catching thumbnail, bold typography, vibrant colors, expressive facial reaction, dramatic lighting, high contrast, click-worthy composition, professional style',
-  'Tech/Futuristic': 'futuristic sleek modern design, neon UI elements, cyberpunk glow, high-tech aesthetic',
-  'Minimalist': 'clean minimal design, simple layout, negative space, modern flat style',
-  'Photorealistic': 'ultra realistic DSLR photo, cinematic lighting, shallow depth of field',
-  'Illustrated': 'digital illustration, stylized characters, vibrant colors, bold outlines'
+  "Bold & Graphic":
+    "eye-catching youtube thumbnail, bold typography, vibrant colors, expressive face, dramatic lighting, high contrast, clickbait style",
+  "Tech/Futuristic":
+    "futuristic sleek design, neon cyberpunk glow, UI elements, high-tech aesthetic",
+  "Minimalist":
+    "clean minimal design, simple layout, lots of negative space, modern flat design",
+  "Photorealistic":
+    "ultra realistic DSLR photo, cinematic lighting, shallow depth of field",
+  "Illustrated":
+    "digital illustration, stylized characters, vibrant colors, bold outlines",
 };
 
 const colorSchemeDescriptions = {
-  vibrant: 'high saturation bold contrast vibrant colors',
-  sunset: 'warm orange pink purple cinematic glow',
-  forest: 'natural green earthy calm tones',
-  neon: 'cyberpunk neon blue pink glow',
-  purple: 'purple magenta modern aesthetic',
-  monochrome: 'black and white dramatic contrast',
-  ocean: 'blue teal clean fresh tone',
-  pastel: 'soft pastel gentle aesthetic'
+  vibrant: "high saturation, bold contrast, vibrant colors",
+  sunset: "warm orange pink purple cinematic lighting",
+  forest: "natural green earthy calm tones",
+  neon: "cyberpunk neon blue pink glow",
+  purple: "purple magenta modern aesthetic",
+  monochrome: "black and white dramatic contrast",
+  ocean: "blue teal clean fresh tone",
+  pastel: "soft pastel gentle aesthetic",
 };
 
 // ---------------- CONTROLLER ----------------
@@ -208,9 +206,10 @@ const colorSchemeDescriptions = {
 export const generateThumbnail = async (req: Request, res: Response) => {
   try {
     const { userId } = req.session;
-    const { title, prompt: user_prompt, style, aspect_ratio, color_scheme } = req.body;
+    const { title, prompt: user_prompt, style, aspect_ratio, color_scheme } =
+      req.body;
 
-    // create DB entry
+    // 1. Save DB entry
     const thumbnail = await Thumbnail.create({
       userId,
       title,
@@ -221,57 +220,47 @@ export const generateThumbnail = async (req: Request, res: Response) => {
       isGenerating: true,
     });
 
-    // ---------------- PROMPT BUILDING ----------------
-
-    let prompt = `Create ${stylePrompts[style as keyof typeof stylePrompts] || stylePrompts["Bold & Graphic"]} for: "${title}".`;
+    // 2. Build prompt (optimized for thumbnails)
+    let prompt = `Create ${
+      stylePrompts[style as keyof typeof stylePrompts] ||
+      stylePrompts["Bold & Graphic"]
+    } for YouTube thumbnail: "${title}".`;
 
     if (color_scheme) {
-      prompt += ` Use ${colorSchemeDescriptions[color_scheme as keyof typeof colorSchemeDescriptions] || ""}.`;
+      prompt += ` Use ${
+        colorSchemeDescriptions[
+          color_scheme as keyof typeof colorSchemeDescriptions
+        ] || ""
+      }.`;
     }
 
     if (user_prompt) {
-      prompt += ` Additional details: ${user_prompt}.`;
+      prompt += ` Extra details: ${user_prompt}.`;
     }
 
-    prompt += ` Aspect ratio ${aspect_ratio || "16:9"}. High CTR YouTube thumbnail, visually striking.`;
+    prompt += ` Aspect ratio ${aspect_ratio || "16:9"}. High CTR, viral, professional, cinematic composition.`;
 
-    // ---------------- REPLICATE GENERATION ----------------
-
-const output = await replicate.run(
-  "black-forest-labs/flux-schnell",
-  {
-    input: {
-      prompt,
-      width: 1024,
-      height: 576,
-      num_outputs: 1,
-      guidance_scale: 7.5,
-      num_inference_steps: 30,
-    },
-  }
-);
-
-    // Replicate returns array of image URLs
-    const imageUrl = (output as string[])[0];
+    // 3. POLLINATIONS IMAGE GENERATION (NO API KEY, NO DNS ISSUES)
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+      prompt
+    )}`;
 
     if (!imageUrl) {
-      throw new Error("Replicate did not return an image");
+      throw new Error("Failed to generate image URL");
     }
 
-    // ---------------- SAVE ----------------
-
+    // 4. Save DB
     thumbnail.image_url = imageUrl;
     thumbnail.isGenerating = false;
     await thumbnail.save();
 
     return res.json({
-      message: "Thumbnail generated successfully",
+      message: "Thumbnail generated successfully (Pollinations)",
       imageUrl,
       thumbnail,
     });
-
   } catch (error: any) {
-    console.error(error);
+    console.error("ERROR:", error);
 
     return res.status(500).json({
       message: error.message || "Internal server error",
@@ -289,7 +278,6 @@ export const deleteThumbnail = async (req: Request, res: Response) => {
     await Thumbnail.findOneAndDelete({ _id: id, userId });
 
     return res.json({ message: "Thumbnail deleted successfully" });
-
   } catch (error: any) {
     console.error(error);
     return res.status(500).json({ message: error.message });
