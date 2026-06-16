@@ -109,7 +109,7 @@ export const dummyThumbnails = [
     {
         _id: "6943e8c763d3d5ec3e4f5c8c",
         userId: "6942b3bd2a93a220baa331b3",
-        title: "Learn how to use Photoshop",
+        title: "Learn development with Samal",
         style: "Bold & Graphic",
         aspect_ratio: "16:9",
         color_scheme: "vibrant",
